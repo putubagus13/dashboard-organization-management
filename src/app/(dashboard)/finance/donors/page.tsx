@@ -9,7 +9,7 @@ import ConfirmDialog from "@/components/ui/confirm-dialog";
 import SearchInput from "@/components/ui/search-input";
 import Pagination from "@/components/ui/pagination";
 import { formatCurrency } from "@/lib/utils/format";
-import type { Donor } from "@/types";
+import type { CashAccount, Donor } from "@/types";
 import { Loader2 } from "lucide-react";
 
 const PAGE_SIZE = 15;
@@ -21,11 +21,13 @@ interface DonorForm {
   address: string;
   notes: string;
   total_donated: number;
+  account_id: string;
 }
 
 export default function DonorsPage() {
   const supabase = createClient();
   const [items, setItems] = useState<Donor[]>([]);
+  const [accounts, setAccounts] = useState<CashAccount[]>([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -43,6 +45,7 @@ export default function DonorsPage() {
     address: "",
     notes: "",
     total_donated: 0,
+    account_id: "",
   });
 
   const fetchData = useCallback(async () => {
@@ -62,7 +65,23 @@ export default function DonorsPage() {
     fetchData();
   }, [fetchData]);
 
-  function openEdit(d: Donor) {
+  useEffect(() => {
+    supabase
+      .from("cash_accounts")
+      .select("*")
+      .eq("is_active", true)
+      .order("name")
+      .then(({ data }) => {
+        const activeAccounts = (data as CashAccount[]) ?? [];
+        setAccounts(activeAccounts);
+        setForm((f) => ({
+          ...f,
+          account_id: f.account_id || activeAccounts[0]?.id || "",
+        }));
+      });
+  }, []);
+
+  async function openEdit(d: Donor) {
     setEditing(d);
     setForm({
       name: d.name,
@@ -71,8 +90,22 @@ export default function DonorsPage() {
       address: d.address ?? "",
       notes: d.notes ?? "",
       total_donated: d.total_donated,
+      account_id: accounts[0]?.id ?? "",
     });
     setShowModal(true);
+
+    const { data } = await supabase
+      .from("cash_transactions")
+      .select("account_id")
+      .eq("donor_id", d.id)
+      .eq("type", "income")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data?.account_id) {
+      setForm((f) => ({ ...f, account_id: data.account_id }));
+    }
   }
 
   function openAdd() {
@@ -84,11 +117,12 @@ export default function DonorsPage() {
       address: "",
       notes: "",
       total_donated: 0,
+      account_id: accounts[0]?.id ?? "",
     });
     setShowModal(true);
   }
 
-  function updateField(field: keyof DonorForm, value: string) {
+  function updateField(field: keyof DonorForm, value: string | number) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
@@ -96,17 +130,46 @@ export default function DonorsPage() {
     e.preventDefault();
     setFormLoading(true);
     setFormError("");
+    const amount = Number(form.total_donated);
+    if (!form.account_id || amount <= 0) {
+      setFormError(
+        !form.account_id
+          ? "Pilih rekening tujuan donasi"
+          : "Nominal donasi harus lebih dari 0"
+      );
+      setFormLoading(false);
+      return;
+    }
+
     const payload = {
       name: form.name,
       phone: form.phone || null,
       email: form.email || null,
       address: form.address || null,
       notes: form.notes || null,
-      total_donated: form.total_donated,
+      total_donated: amount,
     };
+
     const { error: err } = editing
-      ? await supabase.from("donors").update(payload).eq("id", editing.id)
-      : await supabase.from("donors").insert(payload);
+      ? await supabase.rpc("update_donor_with_transaction", {
+          p_donor_id: editing.id,
+          p_name: payload.name,
+          p_phone: payload.phone,
+          p_email: payload.email,
+          p_address: payload.address,
+          p_notes: payload.notes,
+          p_amount: amount,
+          p_account_id: form.account_id,
+        })
+      : await supabase.rpc("create_donor_with_transaction", {
+          p_name: payload.name,
+          p_phone: payload.phone,
+          p_email: payload.email,
+          p_address: payload.address,
+          p_notes: payload.notes,
+          p_amount: amount,
+          p_account_id: form.account_id,
+        });
     if (err) {
       setFormError(err.message);
       setFormLoading(false);
@@ -120,6 +183,10 @@ export default function DonorsPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
+    await supabase
+      .from("cash_transactions")
+      .delete()
+      .eq("donor_id", deleteTarget.id);
     await supabase.from("donors").delete().eq("id", deleteTarget.id);
     setDeleteTarget(undefined);
     setDeleteLoading(false);
@@ -136,7 +203,12 @@ export default function DonorsPage() {
     { key: "name", label: "Nama *", required: true },
     { key: "phone", label: "Telepon", type: "tel" },
     { key: "email", label: "Email", type: "email" },
-    { key: "total_donated", label: "Total Donasi (Rp)", type: "currency" },
+    {
+      key: "total_donated",
+      label: "Total Donasi (Rp)*",
+      type: "currency",
+      required: true,
+    },
     { key: "address", label: "Alamat", multiline: true },
     { key: "notes", label: "Catatan", multiline: true },
   ];
@@ -252,6 +324,24 @@ export default function DonorsPage() {
               {formError}
             </div>
           )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Rekening *
+            </label>
+            <select
+              value={form.account_id}
+              onChange={(e) => updateField("account_id", e.target.value)}
+              className="input-base"
+              required
+            >
+              <option value="">Pilih rekening...</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </div>
           {fields.map((f) => (
             <div key={f.key}>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
@@ -267,11 +357,19 @@ export default function DonorsPage() {
                 />
               ) : (
                 <input
-                  type={f.type ?? "text"}
+                  type={f.type === "currency" ? "number" : f.type ?? "text"}
                   value={form[f.key]}
-                  onChange={(e) => updateField(f.key, e.target.value)}
+                  onChange={(e) =>
+                    updateField(
+                      f.key,
+                      f.type === "currency"
+                        ? Number(e.target.value)
+                        : e.target.value
+                    )
+                  }
                   className="input-base"
                   required={f.required}
+                  min={f.type === "currency" ? 1 : undefined}
                 />
               )}
             </div>
