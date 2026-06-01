@@ -191,6 +191,7 @@ CREATE TABLE meetings (
   type meeting_type DEFAULT 'regular',
   status meeting_status DEFAULT 'scheduled',
   agenda TEXT, minutes TEXT,
+  notes TEXT,
   created_by UUID REFERENCES profiles(id),
   created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
 );
