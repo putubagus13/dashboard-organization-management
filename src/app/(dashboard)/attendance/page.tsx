@@ -79,7 +79,7 @@ export default function AttendancePage() {
           </button>
         }
       />
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         <StatCard
           title="Total Rapat"
           value={count}

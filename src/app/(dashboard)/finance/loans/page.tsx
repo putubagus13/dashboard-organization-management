@@ -1,29 +1,21 @@
-"use client";
-import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { softDeleteById } from "@/lib/audit";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Banknote,
-  CreditCard,
-  CheckCircle,
-  Clock,
-} from "lucide-react";
-import PageHeader from "@/components/layout/page-header";
-import StatCard from "@/components/ui/stat-card";
-import Table from "@/components/ui/table";
-import Badge from "@/components/ui/badge";
-import Modal from "@/components/ui/modal";
-import ConfirmDialog from "@/components/ui/confirm-dialog";
-import SearchInput from "@/components/ui/search-input";
-import Pagination from "@/components/ui/pagination";
-import LoanForm from "@/components/finance/loan-form";
-import LoanPaymentForm from "@/components/finance/loan-payment-form";
-import { formatCurrency, formatDate } from "@/lib/utils/format";
-import { getLoanStatusColor, calculateLoanProgress } from "@/lib/utils/helpers";
-import type { Loan } from "@/types";
+'use client';
+import { useEffect, useState, useCallback } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { softDeleteById } from '@/lib/audit';
+import { Plus, Pencil, Trash2, Banknote, CreditCard, CheckCircle, Clock } from 'lucide-react';
+import PageHeader from '@/components/layout/page-header';
+import StatCard from '@/components/ui/stat-card';
+import Table from '@/components/ui/table';
+import Badge from '@/components/ui/badge';
+import Modal from '@/components/ui/modal';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
+import SearchInput from '@/components/ui/search-input';
+import Pagination from '@/components/ui/pagination';
+import LoanForm from '@/components/finance/loan-form';
+import LoanPaymentForm from '@/components/finance/loan-payment-form';
+import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { getLoanStatusColor, calculateLoanProgress } from '@/lib/utils/helpers';
+import type { Loan } from '@/types';
 
 const PAGE_SIZE = 10;
 
@@ -32,9 +24,9 @@ export default function LoansPage() {
   const [items, setItems] = useState<Loan[]>([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [filterStatus, setFilterStatus] = useState("");
+  const [filterStatus, setFilterStatus] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [editing, setEditing] = useState<Loan | undefined>();
@@ -45,17 +37,12 @@ export default function LoansPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     let q = supabase
-      .from("loans")
-      .select(
-        "*, member:members(full_name,member_number), account:cash_accounts(name)",
-        { count: "exact" }
-      )
-      .is("deleted_at", null);
-    if (search) q = q.ilike("borrower_name", `%${search}%`);
-    if (filterStatus) q = q.eq("status", filterStatus);
-    q = q
-      .order("created_at", { ascending: false })
-      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+      .from('loans')
+      .select('*, member:members(full_name,member_number), account:cash_accounts(name)', { count: 'exact' })
+      .is('deleted_at', null);
+    if (search) q = q.ilike('borrower_name', `%${search}%`);
+    if (filterStatus) q = q.eq('status', filterStatus);
+    q = q.order('created_at', { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
     const { data, count: total } = await q;
     setItems((data as Loan[]) ?? []);
     setCount(total ?? 0);
@@ -69,18 +56,15 @@ export default function LoansPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await softDeleteById(supabase, "loans", deleteTarget.id);
+    await softDeleteById(supabase, 'loans', deleteTarget.id);
     setDeleteTarget(undefined);
     setDeleteLoading(false);
     fetchData();
   }
 
-  const active = items.filter((l) => l.status === "active");
+  const active = items.filter((l) => l.status === 'active');
   const totalActive = active.reduce((s, l) => s + (l.principal_amount ?? 0), 0);
-  const totalRemaining = active.reduce(
-    (s, l) => s + (l.remaining_amount ?? 0),
-    0
-  );
+  const totalRemaining = active.reduce((s, l) => s + (l.remaining_amount ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -100,7 +84,7 @@ export default function LoansPage() {
           </button>
         }
       />
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 gap-4">
         <StatCard
           title="Pinjaman Aktif"
           value={active.length}
@@ -154,44 +138,36 @@ export default function LoansPage() {
           emptyMessage="Tidak ada data pinjaman"
           columns={[
             {
-              key: "no",
-              header: "No. Pinjaman",
-              cell: (l) => (
-                <span className="font-mono text-xs font-semibold text-slate-500">
-                  {l.loan_number}
-                </span>
-              ),
+              key: 'no',
+              header: 'No. Pinjaman',
+              cell: (l) => <span className="font-mono text-xs font-semibold text-slate-500">{l.loan_number}</span>,
             },
             {
-              key: "borrower",
-              header: "Peminjam",
+              key: 'borrower',
+              header: 'Peminjam',
               cell: (l) => (
                 <div>
-                  <p className="font-medium text-slate-900">
-                    {l.borrower_name}
-                  </p>
+                  <p className="font-medium text-slate-900">{l.borrower_name}</p>
                   {l.member && (
-                    <p className="text-xs text-slate-400">
-                      {(l.member as { member_number: string }).member_number}
-                    </p>
+                    <p className="text-xs text-slate-400">{(l.member as { member_number: string }).member_number}</p>
                   )}
                 </div>
               ),
             },
             {
-              key: "amount",
-              header: "Pokok",
+              key: 'amount',
+              header: 'Pokok',
               cell: (l) => formatCurrency(l.principal_amount),
             },
             {
-              key: "remaining",
-              header: "Sisa",
+              key: 'remaining',
+              header: 'Sisa',
               cell: (l) => (
                 <span
                   className={
                     l.remaining_amount && l.remaining_amount > 0
-                      ? "text-red-600 font-semibold"
-                      : "text-green-600 font-semibold"
+                      ? 'text-red-600 font-semibold'
+                      : 'text-green-600 font-semibold'
                   }
                 >
                   {formatCurrency(l.remaining_amount ?? 0)}
@@ -199,58 +175,48 @@ export default function LoansPage() {
               ),
             },
             {
-              key: "progress",
-              header: "Progress",
+              key: 'progress',
+              header: 'Progress',
               cell: (l) => {
-                const pct = calculateLoanProgress(
-                  l.total_paid,
-                  l.principal_amount
-                );
+                const pct = calculateLoanProgress(l.total_paid, l.principal_amount);
                 return (
                   <div className="w-24">
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-slate-400">{pct}%</span>
                     </div>
                     <div className="w-full bg-slate-200 rounded-full h-1.5">
-                      <div
-                        className="bg-brand-600 h-1.5 rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
+                      <div className="bg-brand-600 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
               },
             },
             {
-              key: "due",
-              header: "Jatuh Tempo",
-              cell: (l) => (l.due_date ? formatDate(l.due_date) : "-"),
+              key: 'due',
+              header: 'Jatuh Tempo',
+              cell: (l) => (l.due_date ? formatDate(l.due_date) : '-'),
             },
             {
-              key: "status",
-              header: "Status",
+              key: 'status',
+              header: 'Status',
               cell: (l) => (
-                <span
-                  className={`text-xs font-semibold px-2 py-0.5 rounded-full ${getLoanStatusColor(
-                    l.status
-                  )}`}
-                >
-                  {l.status === "active"
-                    ? "Aktif"
-                    : l.status === "paid"
-                    ? "Lunas"
-                    : l.status === "overdue"
-                    ? "Jatuh Tempo"
-                    : "Dibatalkan"}
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${getLoanStatusColor(l.status)}`}>
+                  {l.status === 'active'
+                    ? 'Aktif'
+                    : l.status === 'paid'
+                    ? 'Lunas'
+                    : l.status === 'overdue'
+                    ? 'Jatuh Tempo'
+                    : 'Dibatalkan'}
                 </span>
               ),
             },
             {
-              key: "actions",
-              header: "",
+              key: 'actions',
+              header: '',
               cell: (l) => (
                 <div className="flex gap-1">
-                  {l.status === "active" && (
+                  {l.status === 'active' && (
                     <button
                       onClick={() => {
                         setPayTarget(l);
@@ -284,17 +250,13 @@ export default function LoansPage() {
         />
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-500">{count} pinjaman</p>
-          <Pagination
-            page={page}
-            totalPages={Math.ceil(count / PAGE_SIZE)}
-            onPageChange={setPage}
-          />
+          <Pagination page={page} totalPages={Math.ceil(count / PAGE_SIZE)} onPageChange={setPage} />
         </div>
       </div>
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
-        title={editing ? "Edit Pinjaman" : "Catat Pinjaman Baru"}
+        title={editing ? 'Edit Pinjaman' : 'Catat Pinjaman Baru'}
         size="md"
       >
         <LoanForm
@@ -306,12 +268,7 @@ export default function LoansPage() {
           onCancel={() => setShowModal(false)}
         />
       </Modal>
-      <Modal
-        open={showPayModal}
-        onClose={() => setShowPayModal(false)}
-        title="Catat Pembayaran Pinjaman"
-        size="sm"
-      >
+      <Modal open={showPayModal} onClose={() => setShowPayModal(false)} title="Catat Pembayaran Pinjaman" size="sm">
         <LoanPaymentForm
           loan={payTarget}
           onSuccess={() => {

@@ -1,7 +1,7 @@
-"use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+'use client';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -20,8 +20,10 @@ import {
   ChevronRight,
   Menu,
   X,
-} from "lucide-react";
-import { cn } from "@/lib/utils/helpers";
+} from 'lucide-react';
+import { cn } from '@/lib/utils/helpers';
+import Image from 'next/image';
+import { STT_TGD_LOGO } from '../../../public';
 
 const icons: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -52,59 +54,49 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
-  { href: "/members", label: "Anggota", icon: "Users" },
+  { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+  { href: '/members', label: 'Anggota', icon: 'Users' },
   {
-    label: "Keuangan",
-    icon: "Wallet",
+    label: 'Keuangan',
+    icon: 'Wallet',
     children: [
-      { href: "/finance", label: "Ringkasan", icon: "PieChart" },
+      { href: '/finance', label: 'Ringkasan', icon: 'PieChart' },
       {
-        href: "/finance/transactions",
-        label: "Transaksi",
-        icon: "ArrowLeftRight",
+        href: '/finance/transactions',
+        label: 'Transaksi',
+        icon: 'ArrowLeftRight',
       },
-      { href: "/finance/loans", label: "Pinjaman", icon: "Banknote" },
-      { href: "/finance/donors", label: "Donatur", icon: "HeartHandshake" },
+      { href: '/finance/loans', label: 'Pinjaman', icon: 'Banknote' },
+      { href: '/finance/donors', label: 'Donatur', icon: 'HeartHandshake' },
     ],
   },
-  { href: "/attendance", label: "Absensi Rapat", icon: "CalendarCheck" },
-  { href: "/dues", label: "Iuran Anggota", icon: "CreditCard" },
+  { href: '/attendance', label: 'Absensi Rapat', icon: 'CalendarCheck' },
+  { href: '/dues', label: 'Iuran Anggota', icon: 'CreditCard' },
   {
-    label: "Bank Sampah",
-    icon: "Recycle",
+    label: 'Bank Sampah',
+    icon: 'Recycle',
     children: [
-      { href: "/waste-bank", label: "Ringkasan", icon: "BarChart3" },
+      { href: '/waste-bank', label: 'Ringkasan', icon: 'BarChart3' },
       {
-        href: "/waste-bank/collections",
-        label: "Pengumpulan",
-        icon: "PackageSearch",
+        href: '/waste-bank/collections',
+        label: 'Pengumpulan',
+        icon: 'PackageSearch',
       },
-      { href: "/waste-bank/leaderboard", label: "Leaderboard", icon: "Trophy" },
+      { href: '/waste-bank/leaderboard', label: 'Leaderboard', icon: 'Trophy' },
     ],
   },
 ];
 
-function NavLink({
-  href,
-  label,
-  icon,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: string;
-  active: boolean;
-}) {
+function NavLink({ href, label, icon, active }: { href: string; label: string; icon: string; active: boolean }) {
   const Icon = icons[icon] ?? LayoutDashboard;
   return (
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
+        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
         active
-          ? "bg-brand-700 text-white shadow-sm shadow-brand-900/20"
-          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          ? 'bg-brand-700 text-white shadow-sm shadow-brand-900/20'
+          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
       )}
     >
       <Icon size={18} className="shrink-0" />
@@ -114,8 +106,7 @@ function NavLink({
 }
 
 function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
-  const isChildActive =
-    item.children?.some((c) => pathname.startsWith(c.href)) ?? false;
+  const isChildActive = item.children?.some((c) => pathname.startsWith(c.href)) ?? false;
   const [open, setOpen] = useState(isChildActive);
   const Icon = icons[item.icon] ?? LayoutDashboard;
 
@@ -124,10 +115,8 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
-          isChildActive
-            ? "text-brand-700 bg-brand-50"
-            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
+          isChildActive ? 'text-brand-700 bg-brand-50' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
         )}
       >
         <Icon size={18} className="shrink-0" />
@@ -142,9 +131,7 @@ function NavGroup({ item, pathname }: { item: NavItem; pathname: string }) {
               {...child}
               active={
                 pathname === child.href ||
-                (child.href !== "/finance" &&
-                  child.href !== "/waste-bank" &&
-                  pathname.startsWith(child.href))
+                (child.href !== '/finance' && child.href !== '/waste-bank' && pathname.startsWith(child.href))
               }
             />
           ))}
@@ -161,8 +148,9 @@ export default function Sidebar() {
   const content = (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-200">
-        <div className="w-9 h-9 rounded-xl bg-brand-700 flex items-center justify-center shrink-0">
-          <span className="text-xs font-display font-bold text-white">S</span>
+        <div className="w-9 h-9 flex items-center justify-center shrink-0">
+          {/* <span className="text-xs font-display font-bold text-white">S</span> */}
+          <Image src={STT_TGD_LOGO.src} alt="Logo" className="object-contain" width={40} height={40} />
         </div>
         <div>
           <p className="font-display text-sm font-bold text-slate-900 leading-tight line-clamp-1">
@@ -179,11 +167,7 @@ export default function Sidebar() {
               href={item.href}
               label={item.label}
               icon={item.icon}
-              active={
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href)
-              }
+              active={item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)}
             />
           ) : (
             <NavGroup key={item.label} item={item} pathname={pathname} />
@@ -191,9 +175,7 @@ export default function Sidebar() {
         )}
       </nav>
       <div className="px-3 py-4 border-t border-slate-200">
-        <p className="text-xs text-slate-400 text-center">
-          Copyright © 2026 TGD
-        </p>
+        <p className="text-xs text-slate-400 text-center">Copyright © 2026 TGD</p>
       </div>
     </div>
   );
@@ -201,9 +183,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden lg:flex w-60 bg-white border-r border-slate-200 flex-col shrink-0">
-        {content}
-      </aside>
+      <aside className="hidden lg:flex w-60 bg-white border-r border-slate-200 flex-col shrink-0">{content}</aside>
       {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(true)}
@@ -213,10 +193,7 @@ export default function Sidebar() {
       </button>
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
           <aside className="relative w-64 bg-white h-full shadow-xl flex flex-col">
             <button
               onClick={() => setMobileOpen(false)}

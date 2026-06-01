@@ -56,55 +56,74 @@
 
 // export default config;
 
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "sans-serif"],
-        display: ["Sora", "sans-serif"],
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
+        display: ['Sora', 'sans-serif'],
       },
       colors: {
         brand: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
-          950: "#172554",
+          50: '#eef8fb',
+          100: '#d9eff7',
+          200: '#b7ddeb',
+          300: '#8cc7dc',
+          400: '#5eaecb',
+          500: '#2f91b6', // warna utama logo
+          600: '#1f7ea6',
+          700: '#0c5f8c',
+          800: '#084b70',
+          900: '#053a57',
+          950: '#02253a',
         },
-        ocean: {
-          50: "#eff6ff",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
+
+        lotus: {
+          50: '#faf6fc',
+          100: '#f2eaf8',
+          200: '#e3d3f1',
+          300: '#cdb0e5',
+          400: '#b38bd8',
+          500: '#9c6bc9',
+          600: '#8350ae',
+          700: '#69418c',
+          800: '#55356f',
+          900: '#462d5a',
+        },
+
+        blossom: {
+          50: '#fff3f8',
+          100: '#ffe5f0',
+          200: '#ffc7de',
+          300: '#ff9fc4',
+          400: '#ff72a7',
+          500: '#f54e8f',
+          600: '#df2f73',
+          700: '#bb1f5b',
+          800: '#981c4d',
+          900: '#7e1c44',
         },
       },
       animation: {
-        "fade-in": "fadeIn 0.5s ease-in-out",
-        "slide-up": "slideUp 0.4s ease-out",
-        "slide-in-right": "slideInRight 0.3s ease-out",
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+        'slide-up': 'slideUp 0.4s ease-out',
+        'slide-in-right': 'slideInRight 0.3s ease-out',
       },
       keyframes: {
         fadeIn: {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
         },
         slideUp: {
-          "0%": { opacity: "0", transform: "translateY(10px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         slideInRight: {
-          "0%": { opacity: "0", transform: "translateX(10px)" },
-          "100%": { opacity: "1", transform: "translateX(0)" },
+          '0%': { opacity: '0', transform: 'translateX(10px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
       },
     },
