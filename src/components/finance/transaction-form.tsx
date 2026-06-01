@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { withCreateAudit, withUpdateAudit } from "@/lib/audit";
 import { Loader2 } from "lucide-react";
 import type { CashTransaction, TransactionFormData, CashAccount, TransactionCategory } from "@/types";
 
@@ -25,8 +26,8 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Pr
 
   useEffect(() => {
     Promise.all([
-      supabase.from("cash_accounts").select("*").eq("is_active",true).order("name"),
-      supabase.from("transaction_categories").select("*").eq("is_active",true).order("name"),
+      supabase.from("cash_accounts").select("*").eq("is_active",true).is("deleted_at", null).order("name"),
+      supabase.from("transaction_categories").select("*").eq("is_active",true).is("deleted_at", null).order("name"),
     ]).then(([{data:acc},{data:cat}]) => {
       setAccounts(acc ?? []); setCategories(cat ?? []);
       if (!transaction && acc?.[0]) setForm(f => ({...f, account_id: acc[0].id}));
@@ -43,8 +44,8 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Pr
     e.preventDefault(); setLoading(true); setError("");
     const payload = { ...form, category_id: form.category_id || null, reference_no: form.reference_no || null, notes: form.notes || null };
     const { error: err } = transaction
-      ? await supabase.from("cash_transactions").update(payload).eq("id", transaction.id)
-      : await supabase.from("cash_transactions").insert(payload);
+      ? await supabase.from("cash_transactions").update(await withUpdateAudit(supabase, payload)).eq("id", transaction.id)
+      : await supabase.from("cash_transactions").insert(await withCreateAudit(supabase, payload));
     if (err) { setError(err.message); setLoading(false); return; }
     onSuccess();
   }

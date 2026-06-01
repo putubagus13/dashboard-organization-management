@@ -21,17 +21,17 @@ export default async function DashboardPage() {
     { count: activeLoans }, { count: upcomingMeetings }, { data: duePaid },
     { count: duePending }, { data: wasteSessions },
   ] = await Promise.all([
-    supabase.from("members").select("*", { count: "exact", head: true }),
-    supabase.from("members").select("*", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("members").select("*", { count: "exact", head: true }).gte("created_at", firstDay),
-    supabase.from("cash_accounts").select("balance").eq("is_active", true),
-    supabase.from("cash_transactions").select("amount").eq("type", "income").gte("transaction_date", firstDay),
-    supabase.from("cash_transactions").select("amount").eq("type", "expense").gte("transaction_date", firstDay),
-    supabase.from("loans").select("*", { count: "exact", head: true }).eq("status", "active"),
-    supabase.from("meetings").select("*", { count: "exact", head: true }).gte("meeting_date", now.toISOString().split("T")[0]),
-    supabase.from("dues_payments").select("amount").eq("status", "paid").eq("period_year", year).eq("period_month", month),
-    supabase.from("dues_payments").select("*", { count: "exact", head: true }).eq("status", "pending").eq("period_year", year).eq("period_month", month),
-    supabase.from("waste_collection_sessions").select("total_weight,total_earnings,session_date").gte("session_date", firstDay).order("session_date", { ascending: false }),
+    supabase.from("members").select("*", { count: "exact", head: true }).is("deleted_at", null),
+    supabase.from("members").select("*", { count: "exact", head: true }).eq("is_active", true).is("deleted_at", null),
+    supabase.from("members").select("*", { count: "exact", head: true }).gte("created_at", firstDay).is("deleted_at", null),
+    supabase.from("cash_accounts").select("balance").eq("is_active", true).is("deleted_at", null),
+    supabase.from("cash_transactions").select("amount").eq("type", "income").gte("transaction_date", firstDay).is("deleted_at", null),
+    supabase.from("cash_transactions").select("amount").eq("type", "expense").gte("transaction_date", firstDay).is("deleted_at", null),
+    supabase.from("loans").select("*", { count: "exact", head: true }).eq("status", "active").is("deleted_at", null),
+    supabase.from("meetings").select("*", { count: "exact", head: true }).gte("meeting_date", now.toISOString().split("T")[0]).is("deleted_at", null),
+    supabase.from("dues_payments").select("amount").eq("status", "paid").eq("period_year", year).eq("period_month", month).is("deleted_at", null),
+    supabase.from("dues_payments").select("*", { count: "exact", head: true }).eq("status", "pending").eq("period_year", year).eq("period_month", month).is("deleted_at", null),
+    supabase.from("waste_collection_sessions").select("total_weight,total_earnings,session_date").gte("session_date", firstDay).is("deleted_at", null).order("session_date", { ascending: false }),
   ]);
 
   const totalBalance = (accounts ?? []).reduce((s, a) => s + (a.balance ?? 0), 0);
@@ -43,13 +43,15 @@ export default async function DashboardPage() {
 
   const { data: recentTransactions } = await supabase.from("cash_transactions")
     .select("id,description,amount,type,transaction_date,category:transaction_categories(name,color)")
+    .is("deleted_at", null)
     .order("transaction_date", { ascending: false }).limit(5);
 
   const { data: topWaste } = await supabase.from("waste_collectors")
-    .select("id,name,total_weight,total_earnings").order("total_weight", { ascending: false }).limit(5);
+    .select("id,name,total_weight,total_earnings").is("deleted_at", null).order("total_weight", { ascending: false }).limit(5);
 
   const { data: recentMembers } = await supabase.from("members")
     .select("id,full_name,member_number,role,join_date,status:member_status_types(name,color)")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false }).limit(4);
 
   return (

@@ -23,17 +23,20 @@ export default async function WasteBankPage() {
   ] = await Promise.all([
     supabase.from("waste_collection_sessions")
       .select("id,title,session_date,status,total_weight,total_earnings,officer_name,location")
+      .is("deleted_at", null)
       .order("session_date", { ascending: false }).limit(6),
     supabase.from("waste_collection_sessions")
       .select("total_weight,total_earnings")
+      .is("deleted_at", null)
       .gte("session_date", firstDay),
     supabase.from("waste_collectors")
       .select("id,name,rt_rw,total_weight,total_earnings,is_member")
+      .is("deleted_at", null)
       .order("total_weight", { ascending: false }).limit(8),
     supabase.from("waste_types")
       .select("id,name,price_per_kg,color")
-      .eq("is_active", true).order("price_per_kg", { ascending: false }),
-    supabase.from("waste_collectors").select("*", { count: "exact", head: true }),
+      .eq("is_active", true).is("deleted_at", null).order("price_per_kg", { ascending: false }),
+    supabase.from("waste_collectors").select("*", { count: "exact", head: true }).is("deleted_at", null),
   ]);
 
   const monthWeight = (monthSessions ?? []).reduce((s, x) => s + (x.total_weight ?? 0), 0);

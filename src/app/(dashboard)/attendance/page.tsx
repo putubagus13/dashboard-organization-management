@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { softDeleteById } from '@/lib/audit';
 import { Plus, Pencil, Trash2, CalendarCheck, Users, CheckSquare, ClipboardList, CheckCircle } from 'lucide-react';
 import PageHeader from '@/components/layout/page-header';
 import StatCard from '@/components/ui/stat-card';
@@ -35,6 +36,7 @@ export default function AttendancePage() {
     const { data, count: total } = await supabase
       .from('meetings')
       .select('*, attendance(count)', { count: 'exact' })
+      .is('deleted_at', null)
       .order('meeting_date', { ascending: false })
       .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
     setMeetings((data as Meeting[]) ?? []);
@@ -49,7 +51,7 @@ export default function AttendancePage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await supabase.from('meetings').delete().eq('id', deleteTarget.id);
+    await softDeleteById(supabase, 'meetings', deleteTarget.id);
     setDeleteTarget(undefined);
     setDeleteLoading(false);
     fetchData();

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { withCreateAudit } from "@/lib/audit";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -12,7 +13,8 @@ export async function GET(req: NextRequest) {
   const dateTo = searchParams.get("date_to") ?? "";
 
   let query = supabase.from("cash_transactions")
-    .select("*, account:cash_accounts(name), category:transaction_categories(name,color)", { count: "exact" });
+    .select("*, account:cash_accounts(name), category:transaction_categories(name,color)", { count: "exact" })
+    .is("deleted_at", null);
 
   if (type) query = query.eq("type", type);
   if (accountId) query = query.eq("account_id", accountId);
@@ -30,7 +32,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const body = await req.json();
-  const { data, error } = await supabase.from("cash_transactions").insert(body).select().single();
+  const { data, error } = await supabase.from("cash_transactions").insert(await withCreateAudit(supabase, body)).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ data }, { status: 201 });
 }

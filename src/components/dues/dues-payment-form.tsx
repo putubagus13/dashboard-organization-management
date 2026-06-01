@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { withCreateAudit, withUpdateAudit } from "@/lib/audit";
 import { Loader2 } from "lucide-react";
 import { MONTHS } from "@/constants";
 import { formatCurrency } from "@/lib/utils/format";
@@ -52,11 +53,13 @@ export default function DuesPaymentForm({ payment, defaultYear, defaultMonth, on
         .from("members")
         .select("id,full_name,member_number,status_id")
         .eq("is_active", true)
+        .is("deleted_at", null)
         .order("full_name"),
       supabase
         .from("dues_settings")
         .select("*, status:member_status_types(id,name,color)")
-        .eq("is_active", true),
+        .eq("is_active", true)
+        .is("deleted_at", null),
     ]).then(([{ data: m }, { data: d }]) => {
       setMembers((m ?? []) as MemberOption[]);
       setDuesSettings((d ?? []) as unknown as DuesSettingWithStatus[]);
@@ -82,8 +85,8 @@ export default function DuesPaymentForm({ payment, defaultYear, defaultMonth, on
     setError("");
     const payload = { ...form, status, notes: form.notes || null };
     const { error: err } = payment
-      ? await supabase.from("dues_payments").update(payload).eq("id", payment.id)
-      : await supabase.from("dues_payments").upsert(payload, {
+      ? await supabase.from("dues_payments").update(await withUpdateAudit(supabase, payload)).eq("id", payment.id)
+      : await supabase.from("dues_payments").upsert(await withCreateAudit(supabase, payload), {
           onConflict: "member_id,period_year,period_month",
         });
     if (err) { setError(err.message); setLoading(false); return; }

@@ -47,19 +47,22 @@ export default async function FinancePage() {
     { data: recentTx },
     { data: topDonors },
   ] = await Promise.all([
-    supabase.from("cash_accounts").select("id,name,description,balance").eq("is_active", true).order("name"),
-    supabase.from("cash_transactions").select("amount").eq("type", "income").gte("transaction_date", firstDay),
-    supabase.from("cash_transactions").select("amount").eq("type", "expense").gte("transaction_date", firstDay),
+    supabase.from("cash_accounts").select("id,name,description,balance").eq("is_active", true).is("deleted_at", null).order("name"),
+    supabase.from("cash_transactions").select("amount").eq("type", "income").gte("transaction_date", firstDay).is("deleted_at", null),
+    supabase.from("cash_transactions").select("amount").eq("type", "expense").gte("transaction_date", firstDay).is("deleted_at", null),
     supabase.from("loans")
       .select("id,loan_number,borrower_name,remaining_amount,due_date,status")
       .eq("status", "active")
+      .is("deleted_at", null)
       .order("due_date"),
     supabase.from("cash_transactions")
       .select("id,description,amount,type,transaction_date,account:cash_accounts(name),category:transaction_categories(name,color)")
+      .is("deleted_at", null)
       .order("transaction_date", { ascending: false })
       .limit(8),
     supabase.from("donors")
       .select("id,name,total_donated")
+      .is("deleted_at", null)
       .order("total_donated", { ascending: false })
       .limit(5),
   ]);

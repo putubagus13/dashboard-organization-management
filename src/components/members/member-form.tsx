@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { withCreateAudit, withUpdateAudit } from "@/lib/audit";
 import { Loader2 } from "lucide-react";
 import type { Member, MemberFormData, MemberStatusType } from "@/types";
 import { GENDER_OPTIONS, MEMBER_ROLE_OPTIONS } from "@/constants";
@@ -34,7 +35,7 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
   });
 
   useEffect(() => {
-    supabase.from("member_status_types").select("*").order("name").then(({ data }) => setStatuses(data ?? []));
+    supabase.from("member_status_types").select("*").is("deleted_at", null).order("name").then(({ data }) => setStatuses(data ?? []));
   }, []);
 
   function update<K extends keyof MemberFormData>(key: K, value: MemberFormData[K]) {
@@ -45,8 +46,8 @@ export default function MemberForm({ member, onSuccess, onCancel }: MemberFormPr
     e.preventDefault(); setLoading(true); setError("");
     const payload = { ...form, date_of_birth: form.date_of_birth || null, gender: form.gender || null, status_id: form.status_id || null };
     const { error: err } = member
-      ? await supabase.from("members").update(payload).eq("id", member.id)
-      : await supabase.from("members").insert(payload);
+      ? await supabase.from("members").update(await withUpdateAudit(supabase, payload)).eq("id", member.id)
+      : await supabase.from("members").insert(await withCreateAudit(supabase, payload));
     if (err) { setError(err.message); setLoading(false); return; }
     onSuccess();
   }

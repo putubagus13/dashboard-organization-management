@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, use } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getAuditUserId } from "@/lib/audit";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/format";
@@ -33,14 +34,15 @@ export default function MeetingAttendancePage({
   useEffect(() => {
     async function load() {
       const [meetingRes, membersRes, attendanceRes, pointsRes] = await Promise.all([
-        supabase.from("meetings").select("*").eq("id", meetingId).single(),
+        supabase.from("meetings").select("*").eq("id", meetingId).is("deleted_at", null).single(),
         supabase
           .from("members")
           .select("id,full_name,member_number")
           .eq("is_active", true)
+          .is("deleted_at", null)
           .order("full_name"),
-        supabase.from("attendance").select("*").eq("meeting_id", meetingId),
-        supabase.from("points_config").select("action,points"),
+        supabase.from("attendance").select("*").eq("meeting_id", meetingId).is("deleted_at", null),
+        supabase.from("points_config").select("action,points").is("deleted_at", null),
       ]);
 
       setMeeting(meetingRes.data as Meeting);
@@ -95,12 +97,16 @@ export default function MeetingAttendancePage({
 
   async function handleSave() {
     setSaving(true);
+    const userId = await getAuditUserId(supabase);
     const upsertData = Object.values(rows).map((r) => ({
       meeting_id: meetingId,
       member_id: r.memberId,
       status: r.status,
       points_earned: r.points,
       notes: r.notes || null,
+      create_by: userId,
+      update_by: userId,
+      recorded_by: userId,
     }));
     await supabase
       .from("attendance")

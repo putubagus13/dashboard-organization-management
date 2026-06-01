@@ -16,6 +16,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
     .from("members")
     .select("*, status:member_status_types(name,color)")
     .eq("id", id)
+    .is("deleted_at", null)
     .single();
 
   if (error || !member) notFound();
@@ -24,12 +25,14 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
     supabase.from("dues_payments")
       .select("*")
       .eq("member_id", id)
+      .is("deleted_at", null)
       .order("period_year", { ascending: false })
       .order("period_month", { ascending: false })
       .limit(12),
     supabase.from("attendance")
       .select("*, meeting:meetings(title,meeting_date,type)")
       .eq("member_id", id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(10),
   ]);

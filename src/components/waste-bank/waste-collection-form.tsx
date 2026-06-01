@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { withCreateAudit } from "@/lib/audit";
 import { Loader2, Plus, Trash2, Search } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/format";
 import type { WasteCollectionSession, WasteType, WasteCollector } from "@/types";
@@ -28,8 +29,8 @@ export default function WasteCollectionForm({ session, onSuccess, onCancel }: Pr
 
   useEffect(() => {
     Promise.all([
-      supabase.from("waste_types").select("*").eq("is_active", true).order("name"),
-      supabase.from("waste_collectors").select("*").order("name"),
+      supabase.from("waste_types").select("*").eq("is_active", true).is("deleted_at", null).order("name"),
+      supabase.from("waste_collectors").select("*").is("deleted_at", null).order("name"),
     ]).then(([{ data: wt }, { data: col }]) => {
       setWasteTypes(wt ?? []);
       setCollectors((col as WasteCollector[]) ?? []);
@@ -78,7 +79,7 @@ export default function WasteCollectionForm({ session, onSuccess, onCancel }: Pr
     if (createNew) {
       const { data: newColl, error: collErr } = await supabase
         .from("waste_collectors")
-        .insert({ name: newName, rt_rw: newRtRw || null, phone: newPhone || null })
+        .insert(await withCreateAudit(supabase, { name: newName, rt_rw: newRtRw || null, phone: newPhone || null }))
         .select().single();
       if (collErr) { setError(collErr.message); setLoading(false); return; }
       collectorId = (newColl as WasteCollector).id;
@@ -86,7 +87,7 @@ export default function WasteCollectionForm({ session, onSuccess, onCancel }: Pr
 
     const { data: collection, error: collErr } = await supabase
       .from("waste_collections")
-      .insert({ session_id: session.id, collector_id: collectorId!, collected_date: date, notes: notes || null })
+      .insert(await withCreateAudit(supabase, { session_id: session.id, collector_id: collectorId!, collected_date: date, notes: notes || null }))
       .select().single();
     if (collErr) { setError(collErr.message); setLoading(false); return; }
 
@@ -98,7 +99,7 @@ export default function WasteCollectionForm({ session, onSuccess, onCancel }: Pr
       subtotal: item.weight * item.price_per_kg,
     }));
 
-    const { error: itemErr } = await supabase.from("waste_collection_items").insert(itemsToInsert);
+    const { error: itemErr } = await supabase.from("waste_collection_items").insert(await Promise.all(itemsToInsert.map(item => withCreateAudit(supabase, item))));
     if (itemErr) { setError(itemErr.message); setLoading(false); return; }
     onSuccess();
   }

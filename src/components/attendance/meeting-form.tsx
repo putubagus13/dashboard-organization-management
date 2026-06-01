@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { withCreateAudit, withUpdateAudit } from "@/lib/audit";
 import { Loader2 } from "lucide-react";
 import type { Meeting, MeetingFormData } from "@/types";
 import { MEETING_TYPE_OPTIONS } from "@/constants";
@@ -28,8 +29,8 @@ export default function MeetingForm({ meeting, onSuccess, onCancel }: Props) {
     e.preventDefault(); setLoading(true); setError("");
     const payload = {...form, description:form.description||null, start_time:form.start_time||null, end_time:form.end_time||null, location:form.location||null, agenda:form.agenda||null};
     const {error:err} = meeting
-      ? await supabase.from("meetings").update(payload).eq("id",meeting.id)
-      : await supabase.from("meetings").insert(payload);
+      ? await supabase.from("meetings").update(await withUpdateAudit(supabase, payload)).eq("id",meeting.id)
+      : await supabase.from("meetings").insert(await withCreateAudit(supabase, payload));
     if (err) { setError(err.message); setLoading(false); return; }
     onSuccess();
   }

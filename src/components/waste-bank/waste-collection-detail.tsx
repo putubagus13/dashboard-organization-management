@@ -17,6 +17,7 @@ export default function WasteCollectionDetail({ session, onAddCollection }: Prop
     supabase.from("waste_collections")
       .select("*, collector:waste_collectors(name,rt_rw), items:waste_collection_items(*, waste_type:waste_types(name,color))")
       .eq("session_id", session.id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .then(({ data }) => { setCollections((data as WasteCollection[]) ?? []); setLoading(false); });
   }, [session]);

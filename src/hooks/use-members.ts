@@ -31,7 +31,8 @@ export function useMembers(filters: MembersFilter) {
       .from("members")
       .select("id,full_name,member_number,status_id,status:member_status_types(id,name,color)", {
         count: "exact",
-      });
+      })
+      .is("deleted_at", null);
     if (search) q = q.ilike("full_name", `%${search}%`);
     if (status_id) q = q.eq("status_id", status_id);
     if (is_active !== undefined) q = q.eq("is_active", is_active);
@@ -62,6 +63,7 @@ export function useAllActiveMembers() {
       .from("members")
       .select("id,full_name,member_number,status_id")
       .eq("is_active", true)
+      .is("deleted_at", null)
       .order("full_name")
       .then(({ data: rows }) => {
         setData((rows ?? []) as unknown as MemberMinimal[]);

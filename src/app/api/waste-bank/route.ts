@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { withCreateAudit } from "@/lib/audit";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -10,6 +11,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabase
       .from("waste_collectors")
       .select("*, member:members(full_name,member_number)")
+      .is("deleted_at", null)
       .order("total_weight", { ascending: false })
       .limit(50);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -19,6 +21,7 @@ export async function GET(req: NextRequest) {
   const { data, count, error } = await supabase
     .from("waste_collection_sessions")
     .select("*", { count: "exact" })
+    .is("deleted_at", null)
     .order("session_date", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest) {
     : type === "collection" ? "waste_collections"
     : "waste_collection_items";
 
-  const { data, error } = await supabase.from(table).insert(payload).select().single();
+  const { data, error } = await supabase.from(table).insert(await withCreateAudit(supabase, payload)).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ data }, { status: 201 });
 }

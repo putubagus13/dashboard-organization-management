@@ -39,6 +39,7 @@ export default function WasteLeaderboardPage() {
       let q = supabase
         .from("waste_collectors")
         .select("*, member:members(full_name,member_number)")
+        .is("deleted_at", null)
         .order("total_weight", { ascending: false });
       if (search) q = q.ilike("name", `%${search}%`);
       const { data } = await q;
@@ -55,6 +56,7 @@ export default function WasteLeaderboardPage() {
       const { data } = await supabase
         .from("waste_collections")
         .select("collector_id,total_weight,total_earnings,collector:waste_collectors(id,name,rt_rw,is_member)")
+        .is("deleted_at", null)
         .gte("collected_date", startDate);
 
       const agg: Record<string, AggRow> = {};

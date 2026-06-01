@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { softDeleteById } from "@/lib/audit";
 import { Plus, CreditCard, CheckCircle, Clock, Settings } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/layout/page-header";
@@ -40,6 +41,7 @@ export default function DuesPage() {
     setLoading(true);
     let q = supabase.from("dues_payments")
       .select("*, member:members(full_name,member_number,status:member_status_types(name,color))", { count: "exact" })
+      .is("deleted_at", null)
       .eq("period_year", filterYear)
       .eq("period_month", filterMonth);
     if (filterStatus) q = q.eq("status", filterStatus);
@@ -52,6 +54,7 @@ export default function DuesPage() {
     // Summary
     const { data: sumData } = await supabase.from("dues_payments")
       .select("status, amount")
+      .is("deleted_at", null)
       .eq("period_year", filterYear)
       .eq("period_month", filterMonth);
     const s = { paid: 0, pending: 0, waived: 0, total: 0 };
@@ -69,7 +72,7 @@ export default function DuesPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await supabase.from("dues_payments").delete().eq("id", deleteTarget.id);
+    await softDeleteById(supabase, "dues_payments", deleteTarget.id);
     setDeleteTarget(undefined); setDeleteLoading(false); fetchData();
   }
 

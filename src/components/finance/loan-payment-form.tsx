@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { withCreateAudit } from "@/lib/audit";
 import { Loader2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/format";
 import type { Loan } from "@/types";
@@ -20,9 +21,9 @@ export default function LoanPaymentForm({ loan, onSuccess, onCancel }: Props) {
     if (!loan) return;
     if (amount <= 0) { setError("Jumlah harus lebih dari 0"); return; }
     setLoading(true); setError("");
-    const {error:err} = await supabase.from("loan_payments").insert({
+    const {error:err} = await supabase.from("loan_payments").insert(await withCreateAudit(supabase, {
       loan_id: loan.id, amount, payment_date: date, notes: notes || null,
-    });
+    }));
     if (err) { setError(err.message); setLoading(false); return; }
     onSuccess();
   }

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { withCreateAudit, withUpdateAudit } from "@/lib/audit";
 import { Loader2 } from "lucide-react";
 import type { Loan, LoanFormData, CashAccount } from "@/types";
 
@@ -25,7 +26,7 @@ export default function LoanForm({ loan, onSuccess, onCancel }: Props) {
   });
 
   useEffect(() => {
-    supabase.from("cash_accounts").select("*").eq("is_active",true).order("name").then(({data}) => {
+    supabase.from("cash_accounts").select("*").eq("is_active",true).is("deleted_at", null).order("name").then(({data}) => {
       setAccounts(data ?? []);
       if (!loan && data?.[0]) setForm(f => ({...f, account_id: data[0].id}));
     });
@@ -37,8 +38,8 @@ export default function LoanForm({ loan, onSuccess, onCancel }: Props) {
     e.preventDefault(); setLoading(true); setError("");
     const payload = {...form, due_date: form.due_date || null, purpose: form.purpose || null, collateral: form.collateral || null, notes: form.notes || null, member_id: form.member_id || null};
     const {error:err} = loan
-      ? await supabase.from("loans").update(payload).eq("id",loan.id)
-      : await supabase.from("loans").insert(payload);
+      ? await supabase.from("loans").update(await withUpdateAudit(supabase, payload)).eq("id",loan.id)
+      : await supabase.from("loans").insert(await withCreateAudit(supabase, payload));
     if (err) { setError(err.message); setLoading(false); return; }
     onSuccess();
   }

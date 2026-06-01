@@ -9,6 +9,13 @@ export type DuesPaymentStatus = 'paid' | 'pending' | 'waived';
 export type WasteSessionStatus = 'ongoing' | 'completed' | 'cancelled';
 export type AppUserRole = 'superadmin' | 'admin' | 'treasurer' | 'secretary' | 'member';
 
+export interface AuditFields {
+  create_by: string | null;
+  update_by: string | null;
+  deleted_by: string | null;
+  deleted_at: string | null;
+}
+
 export interface Profile {
   id: string;
   email: string;
@@ -20,7 +27,7 @@ export interface Profile {
   updated_at: string;
 }
 
-export interface MemberStatusType {
+export interface MemberStatusType extends AuditFields {
   id: string;
   name: string;
   description: string | null;
@@ -29,7 +36,7 @@ export interface MemberStatusType {
   updated_at: string;
 }
 
-export interface Member {
+export interface Member extends AuditFields {
   id: string;
   member_number: string | null;
   full_name: string;
@@ -71,7 +78,7 @@ export interface MemberFormData {
   notes?: string;
 }
 
-export interface CashAccount {
+export interface CashAccount extends AuditFields {
   id: string;
   name: string;
   description: string | null;
@@ -81,7 +88,7 @@ export interface CashAccount {
   updated_at: string;
 }
 
-export interface TransactionCategory {
+export interface TransactionCategory extends AuditFields {
   id: string;
   name: string;
   type: TransactionType;
@@ -91,7 +98,7 @@ export interface TransactionCategory {
   created_at: string;
 }
 
-export interface Donor {
+export interface Donor extends AuditFields {
   id: string;
   name: string;
   phone: string | null;
@@ -106,7 +113,7 @@ export interface Donor {
   member?: Member | null;
 }
 
-export interface CashTransaction {
+export interface CashTransaction extends AuditFields {
   id: string;
   account_id: string;
   type: TransactionType;
@@ -143,7 +150,7 @@ export interface TransactionFormData {
   notes?: string;
 }
 
-export interface Loan {
+export interface Loan extends AuditFields {
   id: string;
   loan_number: string | null;
   borrower_name: string;
@@ -180,7 +187,7 @@ export interface LoanFormData {
   notes?: string;
 }
 
-export interface LoanPayment {
+export interface LoanPayment extends AuditFields {
   id: string;
   loan_id: string;
   amount: number;
@@ -191,7 +198,7 @@ export interface LoanPayment {
   created_at: string;
 }
 
-export interface Meeting {
+export interface Meeting extends AuditFields {
   id: string;
   title: string;
   description: string | null;
@@ -228,7 +235,7 @@ export interface ComplateMeetingFormData {
   notes: string;
 }
 
-export interface Attendance {
+export interface Attendance extends AuditFields {
   id: string;
   meeting_id: string;
   member_id: string;
@@ -243,7 +250,7 @@ export interface Attendance {
   meeting?: Meeting | null;
 }
 
-export interface PointsConfig {
+export interface PointsConfig extends AuditFields {
   id: string;
   action: string;
   label: string;
@@ -253,7 +260,7 @@ export interface PointsConfig {
   updated_at: string;
 }
 
-export interface DuesSetting {
+export interface DuesSetting extends AuditFields {
   id: string;
   status_id: string;
   amount: number;
@@ -267,7 +274,7 @@ export interface DuesSetting {
   status?: MemberStatusType | null;
 }
 
-export interface DuesPayment {
+export interface DuesPayment extends AuditFields {
   id: string;
   member_id: string;
   period_year: number;
@@ -292,7 +299,7 @@ export interface DuesPaymentFormData {
   notes?: string;
 }
 
-export interface WasteCollector {
+export interface WasteCollector extends AuditFields {
   id: string;
   name: string;
   address: string | null;
@@ -309,7 +316,7 @@ export interface WasteCollector {
   member?: Member | null;
 }
 
-export interface WasteType {
+export interface WasteType extends AuditFields {
   id: string;
   name: string;
   description: string | null;
@@ -320,7 +327,7 @@ export interface WasteType {
   updated_at: string;
 }
 
-export interface WasteCollectionSession {
+export interface WasteCollectionSession extends AuditFields {
   id: string;
   session_date: string;
   title: string;
@@ -337,7 +344,7 @@ export interface WasteCollectionSession {
   collection_count?: number;
 }
 
-export interface WasteCollection {
+export interface WasteCollection extends AuditFields {
   id: string;
   session_id: string;
   collector_id: string;
@@ -352,7 +359,7 @@ export interface WasteCollection {
   items?: WasteCollectionItem[];
 }
 
-export interface WasteCollectionItem {
+export interface WasteCollectionItem extends AuditFields {
   id: string;
   collection_id: string;
   waste_type_id: string;

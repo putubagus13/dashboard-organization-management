@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { softDeleteById, withUpdateAudit } from "@/lib/audit";
 import { Plus, Pencil, Trash2, Recycle, CheckCircle, Clock, Eye } from "lucide-react";
 import PageHeader from "@/components/layout/page-header";
 import StatCard from "@/components/ui/stat-card";
@@ -38,7 +39,8 @@ export default function WasteCollectionsPage() {
     setLoading(true);
     let q = supabase
       .from("waste_collection_sessions")
-      .select("*", { count: "exact" });
+      .select("*", { count: "exact" })
+      .is("deleted_at", null);
     if (search) q = q.ilike("title", `%${search}%`);
     if (filterStatus) q = q.eq("status", filterStatus);
     q = q.order("session_date", { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
@@ -53,12 +55,12 @@ export default function WasteCollectionsPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await supabase.from("waste_collection_sessions").delete().eq("id", deleteTarget.id);
+    await softDeleteById(supabase, "waste_collection_sessions", deleteTarget.id);
     setDeleteTarget(undefined); setDeleteLoading(false); fetchData();
   }
 
   async function handleCompleteSession(s: WasteCollectionSession) {
-    await supabase.from("waste_collection_sessions").update({ status: "completed" }).eq("id", s.id);
+    await supabase.from("waste_collection_sessions").update(await withUpdateAudit(supabase, { status: "completed" })).eq("id", s.id);
     fetchData();
   }
 

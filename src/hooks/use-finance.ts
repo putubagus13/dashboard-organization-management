@@ -9,7 +9,7 @@ export function useCashAccounts() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("cash_accounts").select("*").eq("is_active", true).order("name")
+    supabase.from("cash_accounts").select("*").eq("is_active", true).is("deleted_at", null).order("name")
       .then(({ data: rows }) => { setData(rows ?? []); setLoading(false); });
   }, []);
 
@@ -28,7 +28,8 @@ export function useTransactions(filters: { type?: string; account_id?: string; p
   const fetchData = useCallback(async () => {
     setLoading(true);
     let q = supabase.from("cash_transactions")
-      .select("*, account:cash_accounts(name), category:transaction_categories(name,color)", { count: "exact" });
+      .select("*, account:cash_accounts(name), category:transaction_categories(name,color)", { count: "exact" })
+      .is("deleted_at", null);
     if (type) q = q.eq("type", type);
     if (account_id) q = q.eq("account_id", account_id);
     const { data: rows, count: total } = await q
@@ -50,6 +51,7 @@ export function useActiveLoans() {
     supabase.from("loans")
       .select("*, member:members(full_name,member_number)")
       .eq("status", "active")
+      .is("deleted_at", null)
       .order("due_date")
       .then(({ data: rows }) => { setData((rows as Loan[]) ?? []); setLoading(false); });
   }, []);

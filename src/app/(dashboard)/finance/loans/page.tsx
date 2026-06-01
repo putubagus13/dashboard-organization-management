@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { softDeleteById } from "@/lib/audit";
 import {
   Plus,
   Pencil,
@@ -48,7 +49,8 @@ export default function LoansPage() {
       .select(
         "*, member:members(full_name,member_number), account:cash_accounts(name)",
         { count: "exact" }
-      );
+      )
+      .is("deleted_at", null);
     if (search) q = q.ilike("borrower_name", `%${search}%`);
     if (filterStatus) q = q.eq("status", filterStatus);
     q = q
@@ -67,7 +69,7 @@ export default function LoansPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await supabase.from("loans").delete().eq("id", deleteTarget.id);
+    await softDeleteById(supabase, "loans", deleteTarget.id);
     setDeleteTarget(undefined);
     setDeleteLoading(false);
     fetchData();

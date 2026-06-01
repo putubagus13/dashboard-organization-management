@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { softDeleteById } from "@/lib/audit";
 import { Plus, Pencil, Trash2, Users, UserCheck, UserMinus, Download, RefreshCw } from "lucide-react";
 import PageHeader from "@/components/layout/page-header";
 import StatCard from "@/components/ui/stat-card";
@@ -34,7 +35,8 @@ export default function MembersPage() {
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     let query = supabase.from("members")
-      .select("*, status:member_status_types(id,name,color)", { count: "exact" });
+      .select("*, status:member_status_types(id,name,color)", { count: "exact" })
+      .is("deleted_at", null);
     if (search) query = query.ilike("full_name", `%${search}%`);
     if (filterStatus) query = query.eq("status_id", filterStatus);
     if (filterActive !== "") query = query.eq("is_active", filterActive === "true");
@@ -47,13 +49,13 @@ export default function MembersPage() {
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
   useEffect(() => {
-    supabase.from("member_status_types").select("id,name").then(({ data }) => setStatuses(data ?? []));
+    supabase.from("member_status_types").select("id,name").is("deleted_at", null).then(({ data }) => setStatuses(data ?? []));
   }, []);
 
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await supabase.from("members").delete().eq("id", deleteTarget.id);
+    await softDeleteById(supabase, "members", deleteTarget.id);
     setDeleteTarget(undefined); setDeleteLoading(false); fetchMembers();
   }
 

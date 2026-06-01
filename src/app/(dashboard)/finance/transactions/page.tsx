@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { softDeleteById } from "@/lib/audit";
 import {
   Plus,
   TrendingUp,
@@ -45,7 +46,8 @@ export default function TransactionsPage() {
       .select(
         "*, account:cash_accounts(name), category:transaction_categories(name,color)",
         { count: "exact" }
-      );
+      )
+      .is("deleted_at", null);
     if (search) q = q.ilike("description", `%${search}%`);
     if (filterType) q = q.eq("type", filterType);
     q = q
@@ -64,7 +66,7 @@ export default function TransactionsPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await supabase.from("cash_transactions").delete().eq("id", deleteTarget.id);
+    await softDeleteById(supabase, "cash_transactions", deleteTarget.id);
     setDeleteTarget(undefined);
     setDeleteLoading(false);
     fetchData();

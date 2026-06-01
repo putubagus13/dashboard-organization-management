@@ -9,7 +9,7 @@ export function useWasteTypes() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("waste_types").select("*").eq("is_active", true).order("name")
+    supabase.from("waste_types").select("*").eq("is_active", true).is("deleted_at", null).order("name")
       .then(({ data: rows }) => { setData(rows ?? []); setLoading(false); });
   }, []);
 
@@ -24,6 +24,7 @@ export function useWasteCollectors(search = "") {
   useEffect(() => {
     let q = supabase.from("waste_collectors")
       .select("*, member:members(full_name,member_number)")
+      .is("deleted_at", null)
       .order("total_weight", { ascending: false });
     if (search) q = q.ilike("name", `%${search}%`);
     q.then(({ data: rows }) => { setData((rows as WasteCollector[]) ?? []); setLoading(false); });

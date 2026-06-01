@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { withCreateAudit, withUpdateAudit } from '@/lib/audit';
 import { Loader2 } from 'lucide-react';
 import type { Meeting, ComplateMeetingFormData } from '@/types';
 import { MEETING_STATUS_OPTIONS, MEETING_TYPE_OPTIONS } from '@/constants';
@@ -20,8 +21,6 @@ export default function ComplateMeetingForm({ meeting, onSuccess, onCancel }: Pr
     notes: meeting?.notes ?? '',
   });
 
-  console.log('meeting', meeting);
-
   function up<K extends keyof ComplateMeetingFormData>(k: K, v: ComplateMeetingFormData[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
@@ -35,8 +34,8 @@ export default function ComplateMeetingForm({ meeting, onSuccess, onCancel }: Pr
       notes: form.notes || null,
     };
     const { error: err } = meeting
-      ? await supabase.from('meetings').update(payload).eq('id', meeting.id)
-      : await supabase.from('meetings').insert(payload);
+      ? await supabase.from('meetings').update(await withUpdateAudit(supabase, payload)).eq('id', meeting.id)
+      : await supabase.from('meetings').insert(await withCreateAudit(supabase, payload));
     if (err) {
       setError(err.message);
       setLoading(false);

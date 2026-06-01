@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { withCreateAudit, withUpdateAudit } from "@/lib/audit";
 import { Loader2 } from "lucide-react";
 import type { WasteCollectionSession } from "@/types";
 
@@ -30,8 +31,8 @@ export default function WasteSessionForm({ session, onSuccess, onCancel }: Props
       status: "ongoing" as const,
     };
     const { error: err } = session
-      ? await supabase.from("waste_collection_sessions").update(payload).eq("id", session.id)
-      : await supabase.from("waste_collection_sessions").insert(payload);
+      ? await supabase.from("waste_collection_sessions").update(await withUpdateAudit(supabase, payload)).eq("id", session.id)
+      : await supabase.from("waste_collection_sessions").insert(await withCreateAudit(supabase, payload));
     if (err) { setError(err.message); setLoading(false); return; }
     onSuccess();
   }

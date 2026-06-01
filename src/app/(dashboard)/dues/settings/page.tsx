@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { softDeleteById, withCreateAudit, withUpdateAudit } from "@/lib/audit";
 import { Plus, Pencil, Trash2, Settings2, Star, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/layout/page-header";
@@ -31,9 +32,9 @@ export default function DuesSettingsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [{ data: s }, { data: st }, { data: p }] = await Promise.all([
-      supabase.from("dues_settings").select("*, status:member_status_types(name,color)").order("created_at", { ascending: false }),
-      supabase.from("member_status_types").select("*").order("name"),
-      supabase.from("points_config").select("*").order("label"),
+      supabase.from("dues_settings").select("*, status:member_status_types(name,color)").is("deleted_at", null).order("created_at", { ascending: false }),
+      supabase.from("member_status_types").select("*").is("deleted_at", null).order("name"),
+      supabase.from("points_config").select("*").is("deleted_at", null).order("label"),
     ]);
     setSettings((s as DuesSetting[]) ?? []);
     setStatuses(st ?? []);
@@ -62,8 +63,8 @@ export default function DuesSettingsPage() {
     e.preventDefault(); setFormLoading(true); setFormError("");
     const payload = { ...form, notes: form.notes || null, is_active: true };
     const { error } = editing
-      ? await supabase.from("dues_settings").update(payload).eq("id", editing.id)
-      : await supabase.from("dues_settings").insert(payload);
+      ? await supabase.from("dues_settings").update(await withUpdateAudit(supabase, payload)).eq("id", editing.id)
+      : await supabase.from("dues_settings").insert(await withCreateAudit(supabase, payload));
     if (error) { setFormError(error.message); setFormLoading(false); return; }
     setShowModal(false); fetchData(); setFormLoading(false);
   }
@@ -71,7 +72,7 @@ export default function DuesSettingsPage() {
   async function handleSavePoints() {
     setFormLoading(true);
     await Promise.all(
-      points.map(p => supabase.from("points_config").update({ points: pointsForm[p.id] ?? p.points }).eq("id", p.id))
+      points.map(async p => supabase.from("points_config").update(await withUpdateAudit(supabase, { points: pointsForm[p.id] ?? p.points })).eq("id", p.id))
     );
     setEditPoints(false); fetchData(); setFormLoading(false);
   }
@@ -79,7 +80,7 @@ export default function DuesSettingsPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await supabase.from("dues_settings").delete().eq("id", deleteTarget.id);
+    await softDeleteById(supabase, "dues_settings", deleteTarget.id);
     setDeleteTarget(undefined); setDeleteLoading(false); fetchData();
   }
 

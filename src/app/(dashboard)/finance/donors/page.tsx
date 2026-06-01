@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getAuditUserId, softDeleteById } from "@/lib/audit";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import PageHeader from "@/components/layout/page-header";
 import Table from "@/components/ui/table";
@@ -50,7 +51,7 @@ export default function DonorsPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    let q = supabase.from("donors").select("*", { count: "exact" });
+    let q = supabase.from("donors").select("*", { count: "exact" }).is("deleted_at", null);
     if (search) q = q.ilike("name", `%${search}%`);
     q = q
       .order("total_donated", { ascending: false })
@@ -70,6 +71,7 @@ export default function DonorsPage() {
       .from("cash_accounts")
       .select("*")
       .eq("is_active", true)
+      .is("deleted_at", null)
       .order("name")
       .then(({ data }) => {
         const activeAccounts = (data as CashAccount[]) ?? [];
@@ -99,6 +101,7 @@ export default function DonorsPage() {
       .select("account_id")
       .eq("donor_id", d.id)
       .eq("type", "income")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -183,11 +186,13 @@ export default function DonorsPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
+    const userId = await getAuditUserId(supabase);
     await supabase
       .from("cash_transactions")
-      .delete()
-      .eq("donor_id", deleteTarget.id);
-    await supabase.from("donors").delete().eq("id", deleteTarget.id);
+      .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
+      .eq("donor_id", deleteTarget.id)
+      .is("deleted_at", null);
+    await softDeleteById(supabase, "donors", deleteTarget.id);
     setDeleteTarget(undefined);
     setDeleteLoading(false);
     fetchData();
