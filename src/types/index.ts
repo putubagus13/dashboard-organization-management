@@ -167,6 +167,7 @@ export interface Loan extends AuditFields {
   collateral: string | null;
   notes: string | null;
   approved_by: string | null;
+  transaction_id: string | null;
   created_at: string;
   updated_at: string;
   member?: Member | null;
@@ -400,6 +401,22 @@ export interface ApiResponse<T> {
 }
 
 export interface PaginatedResponse<T> {
+  data: T[];
+  count: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/** Standard API response for all Supabase operations */
+export interface ApiResult<T> {
+  data: T | null;
+  error: string | null;
+  status: "success" | "error";
+}
+
+/** Standard paginated list response */
+export interface PaginatedResult<T> {
   data: T[];
   count: number;
   page: number;

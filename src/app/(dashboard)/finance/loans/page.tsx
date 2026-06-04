@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { softDeleteById } from '@/lib/audit';
 import { Plus, Pencil, Trash2, Banknote, CreditCard, CheckCircle, Clock } from 'lucide-react';
 import PageHeader from '@/components/layout/page-header';
 import StatCard from '@/components/ui/stat-card';
@@ -56,7 +55,7 @@ export default function LoansPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    await softDeleteById(supabase, 'loans', deleteTarget.id);
+    await supabase.rpc('soft_delete_loan_with_transactions', { p_loan_id: deleteTarget.id });
     setDeleteTarget(undefined);
     setDeleteLoading(false);
     fetchData();

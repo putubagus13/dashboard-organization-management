@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { withCreateAudit } from "@/lib/audit";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -21,7 +20,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const body = await req.json();
-  const { data, error } = await supabase.from("loans").insert(await withCreateAudit(supabase, body)).select().single();
+  const { data, error } = await supabase.rpc("create_loan_with_transaction", {
+    p_borrower_name: body.borrower_name,
+    p_member_id: body.member_id ?? null,
+    p_account_id: body.account_id,
+    p_principal_amount: body.principal_amount,
+    p_interest_rate: body.interest_rate ?? 0,
+    p_loan_date: body.loan_date,
+    p_due_date: body.due_date ?? null,
+    p_purpose: body.purpose ?? null,
+    p_collateral: body.collateral ?? null,
+    p_notes: body.notes ?? null,
+  });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ data }, { status: 201 });
 }
