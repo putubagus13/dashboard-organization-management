@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Plus, Pencil, Trash2, Banknote, CreditCard, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, Banknote, CreditCard, CheckCircle, Clock, Download } from 'lucide-react';
+import { exportToExcel, type ExportColumn } from '@/lib/utils/export-excel';
 import PageHeader from '@/components/layout/page-header';
 import StatCard from '@/components/ui/stat-card';
 import Table from '@/components/ui/table';
@@ -65,22 +66,45 @@ export default function LoansPage() {
   const totalActive = active.reduce((s, l) => s + (l.principal_amount ?? 0), 0);
   const totalRemaining = active.reduce((s, l) => s + (l.remaining_amount ?? 0), 0);
 
+  function handleExport() {
+    const cols: ExportColumn<Loan>[] = [
+      { header: 'No. Pinjaman', accessor: (l) => l.loan_number ?? '-' },
+      { header: 'Peminjam', accessor: (l) => l.borrower_name },
+      { header: 'Pokok', accessor: (l) => l.principal_amount },
+      { header: 'Sisa', accessor: (l) => l.remaining_amount ?? 0 },
+      { header: 'Total Bayar', accessor: (l) => l.total_paid },
+      { header: 'Bunga (%)', accessor: (l) => l.interest_rate },
+      { header: 'Tanggal Pinjaman', accessor: (l) => l.loan_date },
+      { header: 'Jatuh Tempo', accessor: (l) => l.due_date ?? '-' },
+      { header: 'Status', accessor: (l) => (l.status === 'active' ? 'Aktif' : l.status === 'paid' ? 'Lunas' : l.status === 'overdue' ? 'Jatuh Tempo' : 'Dibatalkan') },
+      { header: 'Tujuan', accessor: (l) => l.purpose ?? '-' },
+      { header: 'Catatan', accessor: (l) => l.notes ?? '-' },
+    ];
+    exportToExcel('data-pinjaman', 'Pinjaman', cols, items);
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Manajemen Pinjaman"
         description="Kelola pinjaman anggota dan masyarakat"
         actions={
-          <button
-            onClick={() => {
-              setEditing(undefined);
-              setShowModal(true);
-            }}
-            className="btn-primary"
-          >
-            <Plus size={16} />
-            Catat Pinjaman
-          </button>
+          <div className="flex gap-2">
+            <button onClick={handleExport} className="btn-secondary">
+              <Download size={14} />
+              Export Excel
+            </button>
+            <button
+              onClick={() => {
+                setEditing(undefined);
+                setShowModal(true);
+              }}
+              className="btn-primary"
+            >
+              <Plus size={16} />
+              Catat Pinjaman
+            </button>
+          </div>
         }
       />
       <div className="grid md:grid-cols-3 gap-4">

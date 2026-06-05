@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { softDeleteById } from '@/lib/audit';
 import { Plus, Pencil, Trash2, Users, UserCheck, UserMinus, Download, RefreshCw } from 'lucide-react';
+import { exportToExcel, type ExportColumn } from '@/lib/utils/export-excel';
 import PageHeader from '@/components/layout/page-header';
 import StatCard from '@/components/ui/stat-card';
 import Table from '@/components/ui/table';
@@ -70,22 +71,45 @@ export default function MembersPage() {
 
   const totalPages = Math.ceil(count / PAGE_SIZE);
 
+  function handleExport() {
+    const cols: ExportColumn<Member>[] = [
+      { header: 'No. Anggota', accessor: (m) => m.member_number ?? '-' },
+      { header: 'Nama', accessor: (m) => m.full_name },
+      { header: 'L/P', accessor: (m) => (m.gender === 'L' ? 'Laki-laki' : m.gender === 'P' ? 'Perempuan' : '-') },
+      { header: 'Status', accessor: (m) => m.status?.name ?? '-' },
+      { header: 'Jabatan', accessor: (m) => m.role.replace('_', ' ') },
+      { header: 'Tanggal Bergabung', accessor: (m) => m.join_date },
+      { header: 'Poin', accessor: (m) => m.activity_points },
+      { header: 'Aktif', accessor: (m) => (m.is_active ? 'Ya' : 'Tidak') },
+      { header: 'Telepon', accessor: (m) => m.phone ?? '-' },
+      { header: 'Email', accessor: (m) => m.email ?? '-' },
+      { header: 'Alamat', accessor: (m) => m.address ?? '-' },
+    ];
+    exportToExcel('data-anggota', 'Anggota', cols, members);
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Manajemen Anggota"
         description={`Total ${count} anggota terdaftar`}
         actions={
-          <button
-            onClick={() => {
-              setEditing(undefined);
-              setShowModal(true);
-            }}
-            className="btn-primary"
-          >
-            <Plus size={16} />
-            Tambah Anggota
-          </button>
+          <div className="flex gap-2">
+            <button onClick={handleExport} className="btn-secondary">
+              <Download size={14} />
+              Export Excel
+            </button>
+            <button
+              onClick={() => {
+                setEditing(undefined);
+                setShowModal(true);
+              }}
+              className="btn-primary"
+            >
+              <Plus size={16} />
+              Tambah Anggota
+            </button>
+          </div>
         }
       />
 

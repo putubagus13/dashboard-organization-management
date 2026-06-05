@@ -2,7 +2,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getAuditUserId, softDeleteById } from "@/lib/audit";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Download } from "lucide-react";
+import { exportToExcel, type ExportColumn } from "@/lib/utils/export-excel";
 import PageHeader from "@/components/layout/page-header";
 import Table from "@/components/ui/table";
 import Modal from "@/components/ui/modal";
@@ -61,6 +62,19 @@ export default function DonorsPage() {
     setCount(total ?? 0);
     setLoading(false);
   }, [search, page]);
+
+  function handleExport() {
+    const cols: ExportColumn<Donor>[] = [
+      { header: 'Nama', accessor: (d) => d.name },
+      { header: 'Telepon', accessor: (d) => d.phone ?? '-' },
+      { header: 'Email', accessor: (d) => d.email ?? '-' },
+      { header: 'Alamat', accessor: (d) => d.address ?? '-' },
+      { header: 'Total Donasi', accessor: (d) => d.total_donated },
+      { header: 'Anggota', accessor: (d) => (d.is_member ? 'Ya' : 'Tidak') },
+      { header: 'Catatan', accessor: (d) => d.notes ?? '-' },
+    ];
+    exportToExcel('data-donatur', 'Donatur', cols, items);
+  }
 
   useEffect(() => {
     fetchData();
@@ -224,9 +238,14 @@ export default function DonorsPage() {
         title="Manajemen Donatur"
         description="Data donatur dan riwayat donasi"
         actions={
-          <button onClick={openAdd} className="btn-primary">
-            <Plus size={16} /> Tambah Donatur
-          </button>
+          <div className="flex gap-2">
+            <button onClick={handleExport} className="btn-secondary">
+              <Download size={14} /> Export Excel
+            </button>
+            <button onClick={openAdd} className="btn-primary">
+              <Plus size={16} /> Tambah Donatur
+            </button>
+          </div>
         }
       />
 
